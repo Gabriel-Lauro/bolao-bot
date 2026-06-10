@@ -1,0 +1,18 @@
+[Unit]
+Description=Bolão Bot Copa do Mundo
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bolao-bot
+ExecStart=/home/ubuntu/bolao-bot/bolao-bot
+Restart=on-failure
+RestartSec=5s
+EnvironmentFile=/home/ubuntu/bolao-bot/.env
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

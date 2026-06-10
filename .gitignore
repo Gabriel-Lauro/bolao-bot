@@ -1,0 +1,6 @@
+.env
+bolao.db
+bolao-bot
+bolao-bot.exe
+*.db-shm
+*.db-wal
