@@ -1,9 +1,7 @@
 package football
 
 // Translations mapeia o nome em inglês retornado pela API para português.
-// Nomes confirmados pela football-data.org API (competitions/2000/teams).
 var Translations = map[string]string{
-	// ── Confirmados pela API ────────────────────────────────────────────────
 	"Uruguay":            "Uruguai",
 	"Germany":            "Alemanha",
 	"Spain":              "Espanha",
@@ -52,51 +50,6 @@ var Translations = map[string]string{
 	"Norway":             "Noruega",
 	"Scotland":           "Escócia",
 	"Curaçao":            "Curaçao",
-
-	// ── Variações alternativas que a API pode usar ──────────────────────────
-	"USA":                    "Estados Unidos",
-	"Korea Republic":         "Coreia do Sul",
-	"Korea DPR":              "Coreia do Norte",
-	"North Korea":            "Coreia do Norte",
-	"Czech Republic":         "República Tcheca",
-	"Bosnia and Herzegovina": "Bósnia e Herzegovina",
-	"Côte d'Ivoire":          "Costa do Marfim",
-	"Cape Verde":             "Cabo Verde",
-	"DR Congo":               "Rep. Democrática do Congo",
-	"Italy":                  "Itália",
-	"Denmark":                "Dinamarca",
-	"Poland":                 "Polônia",
-	"Ukraine":                "Ucrânia",
-	"Hungary":                "Hungria",
-	"Slovakia":               "Eslováquia",
-	"Slovenia":               "Eslovênia",
-	"Serbia":                 "Sérvia",
-	"Romania":                "Romênia",
-	"Greece":                 "Grécia",
-	"Wales":                  "País de Gales",
-	"Ireland":                "Irlanda",
-	"Northern Ireland":       "Irlanda do Norte",
-	"Russia":                 "Rússia",
-	"Iceland":                "Islândia",
-	"Finland":                "Finlândia",
-	"North Macedonia":        "Macedônia do Norte",
-	"Nigeria":                "Nigéria",
-	"Cameroon":               "Camarões",
-	"Chile":                  "Chile",
-	"Bolivia":                "Bolívia",
-	"Peru":                   "Peru",
-	"Venezuela":              "Venezuela",
-	"Costa Rica":             "Costa Rica",
-	"Honduras":               "Honduras",
-	"Jamaica":                "Jamaica",
-	"China PR":               "China",
-	"China":                  "China",
-	"Bahrain":                "Barein",
-	"United Arab Emirates":   "Emirados Árabes",
-	"Oman":                   "Omã",
-	"Indonesia":              "Indonésia",
-	"New Caledonia":          "Nova Caledônia",
-	"Tahiti":                 "Taiti",
 }
 
 // Translate retorna o nome em português ou o original se não tiver tradução
