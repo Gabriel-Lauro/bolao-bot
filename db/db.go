@@ -30,8 +30,6 @@ func New(path string) (*DB, error) {
 	return &DB{conn: conn}, nil
 }
 
-// ── Users ──────────────────────────────────────────────────────────────────
-
 func (d *DB) UpsertUser(u *models.User) error {
 	_, err := d.conn.Exec(`
 		INSERT INTO users (id, username) VALUES (?, ?)
@@ -50,17 +48,17 @@ func (d *DB) GetUser(id string) (*models.User, error) {
 	return u, err
 }
 
-// ── Matches ────────────────────────────────────────────────────────────────
-
 func (d *DB) UpsertMatch(m *models.Match) error {
 	_, err := d.conn.Exec(`
 		INSERT INTO matches (id, home_team, away_team, stage, starts_at, status, home_score, away_score)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
+			home_team  = excluded.home_team,
+			away_team  = excluded.away_team,
 			home_score = excluded.home_score,
 			away_score = excluded.away_score,
 			status     = excluded.status
-	`, m.ID, m.HomeTeam, m.AwayTeam, m.Stage, m.StartsAt, m.Status, m.HomeScore, m.AwayScore)
+	`, m.ID, m.HomeTeam, m.AwayTeam, m.Stage, m.StartsAt.UTC().Format("2006-01-02 15:04:05"), m.Status, m.HomeScore, m.AwayScore)
 	return err
 }
 
@@ -105,8 +103,6 @@ func (d *DB) GetTodayMatches() ([]*models.Match, error) {
 	defer rows.Close()
 	return scanMatches(rows)
 }
-
-// ── Guesses ────────────────────────────────────────────────────────────────
 
 func (d *DB) UpsertGuess(g *models.Guess) error {
 	_, err := d.conn.Exec(`
@@ -221,8 +217,6 @@ func (d *DB) SetGuessPoints(id, points int) error {
 	return err
 }
 
-// ── Ranking ────────────────────────────────────────────────────────────────
-
 func (d *DB) GetRanking() ([]*models.RankingEntry, error) {
 	rows, err := d.conn.Query(`
 		SELECT
@@ -254,8 +248,6 @@ func (d *DB) GetRanking() ([]*models.RankingEntry, error) {
 	return ranking, nil
 }
 
-// ── Sync log ───────────────────────────────────────────────────────────────
-
 func (d *DB) LogSync(t string) {
 	d.conn.Exec(`INSERT INTO sync_log (type) VALUES (?)`, t)
 }
@@ -266,8 +258,6 @@ func (d *DB) TodaySyncCount() int {
 	row.Scan(&n)
 	return n
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 func scanMatch(row *sql.Row) (*models.Match, error) {
 	m := &models.Match{}
