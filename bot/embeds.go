@@ -10,15 +10,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// ── /jogos ─────────────────────────────────────────────────────────────────
-
 func embedJogos(matches []*models.Match) *discordgo.MessageEmbed {
 	var lines []string
 	for _, m := range matches {
 		t := m.StartsAt.In(time.FixedZone("BRT", -3*3600))
 		lines = append(lines, fmt.Sprintf("⚽ **%s** — %s", m.Label(), t.Format("02/01 às 15h04")))
 	}
-
 	return &discordgo.MessageEmbed{
 		Title:       "🗓️ Jogos abertos para palpite",
 		Description: strings.Join(lines, "\n"),
@@ -27,16 +24,12 @@ func embedJogos(matches []*models.Match) *discordgo.MessageEmbed {
 	}
 }
 
-// ── /meus-palpites ─────────────────────────────────────────────────────────
-
 func embedMeusPalpites(guesses []db.GuessWithMatch) *discordgo.MessageEmbed {
 	var pending, done []string
 	totalPts := 0
-
 	for _, gm := range guesses {
 		g := gm.Guess
 		label := fmt.Sprintf("**%s** — seu palpite: %d×%d", gm.HomeTeam+" × "+gm.AwayTeam, g.HomeScore, g.AwayScore)
-
 		if g.Calculated {
 			totalPts += g.Points
 			var status string
@@ -54,14 +47,13 @@ func embedMeusPalpites(guesses []db.GuessWithMatch) *discordgo.MessageEmbed {
 			}
 			done = append(done, label+result+"\n└ "+status)
 		} else {
-			var extra string
+			extra := ""
 			if gm.Status == "live" {
 				extra = " 🔴 AO VIVO"
 			}
 			pending = append(pending, label+extra)
 		}
 	}
-
 	var fields []*discordgo.MessageEmbedField
 	if len(pending) > 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
@@ -75,26 +67,22 @@ func embedMeusPalpites(guesses []db.GuessWithMatch) *discordgo.MessageEmbed {
 			Value: strings.Join(done, "\n"),
 		})
 	}
-
 	return &discordgo.MessageEmbed{
 		Title:  "🎯 Seus palpites",
 		Color:  0x5865F2,
 		Fields: fields,
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("Total: %d pontos", totalPts),
-		},
+		Footer: &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Total: %d pontos", totalPts)},
 	}
 }
-
-// ── /ranking ───────────────────────────────────────────────────────────────
 
 func embedRanking(ranking []*models.RankingEntry) *discordgo.MessageEmbed {
 	medals := []string{"🥇", "🥈", "🥉"}
 	var lines []string
-
 	for _, e := range ranking {
-		medal := medals[e.Position-1]
-		if e.Position > 3 {
+		var medal string
+		if e.Position <= 3 {
+			medal = medals[e.Position-1]
+		} else {
 			medal = fmt.Sprintf("%d.", e.Position)
 		}
 		lines = append(lines, fmt.Sprintf(
@@ -102,7 +90,6 @@ func embedRanking(ranking []*models.RankingEntry) *discordgo.MessageEmbed {
 			medal, e.Username, e.Total, e.Exact, e.Winner,
 		))
 	}
-
 	return &discordgo.MessageEmbed{
 		Title:       "🏆 Ranking do Bolão Copa 2026",
 		Description: strings.Join(lines, "\n"),
@@ -110,8 +97,6 @@ func embedRanking(ranking []*models.RankingEntry) *discordgo.MessageEmbed {
 		Footer:      &discordgo.MessageEmbedFooter{Text: "Placar exato = 3pts · Vencedor certo = 1pt"},
 	}
 }
-
-// ── Resultado publicado no canal ───────────────────────────────────────────
 
 func EmbedResultado(match *models.Match, guesses []*models.Guess, usernames map[string]string) *discordgo.MessageEmbed {
 	home, away := 0, 0
@@ -121,7 +106,6 @@ func EmbedResultado(match *models.Match, guesses []*models.Guess, usernames map[
 	if match.AwayScore != nil {
 		away = *match.AwayScore
 	}
-
 	var exatos, vencedores, erros []string
 	for _, g := range guesses {
 		name := usernames[g.UserID]
@@ -137,7 +121,6 @@ func EmbedResultado(match *models.Match, guesses []*models.Guess, usernames map[
 			erros = append(erros, "❌ "+name)
 		}
 	}
-
 	var fields []*discordgo.MessageEmbedField
 	if len(exatos) > 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
@@ -157,14 +140,12 @@ func EmbedResultado(match *models.Match, guesses []*models.Guess, usernames map[
 			Value: strings.Join(erros, "  "),
 		})
 	}
-
 	if len(fields) == 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:  "Nenhum palpite",
 			Value: "Ninguém apostou nesse jogo.",
 		})
 	}
-
 	return &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("🏁 %s %d × %d %s", match.HomeTeam, home, away, match.AwayTeam),
 		Description: "Jogo encerrado! Confira os pontos:",
