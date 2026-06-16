@@ -40,16 +40,43 @@ func (b *Bot) handleComponent(s *discordgo.Session, i *discordgo.InteractionCrea
 	}
 }
 
+// ── helpers de resposta deferred ───────────────────────────────────────────
+
+func deferReply(s *discordgo.Session, i *discordgo.InteractionCreate, ephemeral bool) {
+	flags := discordgo.MessageFlags(0)
+	if ephemeral {
+		flags = discordgo.MessageFlagsEphemeral
+	}
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{Flags: flags},
+	})
+}
+
+func editReply(s *discordgo.Session, i *discordgo.InteractionCreate, content string) {
+	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: &content,
+	})
+}
+
+func editReplyEmbed(s *discordgo.Session, i *discordgo.InteractionCreate, embed *discordgo.MessageEmbed) {
+	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{embed},
+	})
+}
+
 // ── /jogos ─────────────────────────────────────────────────────────────────
 
 func (b *Bot) cmdJogos(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	deferReply(s, i, false)
+
 	matches, err := b.db.GetOpenMatches()
 	if err != nil || len(matches) == 0 {
-		respond(s, i, "Nenhum jogo aberto para palpite no momento.", true)
+		editReply(s, i, "Nenhum jogo aberto para palpite no momento.")
 		return
 	}
 
-	respondEmbed(s, i, embedJogos(matches), false)
+	editReplyEmbed(s, i, embedJogos(matches))
 }
 
 // ── /palpite ───────────────────────────────────────────────────────────────
@@ -61,12 +88,10 @@ func (b *Bot) cmdPalpite(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	// Garante usuário no banco
 	uid := userID(i)
 	uname := username(i)
 	b.db.UpsertUser(&models.User{ID: uid, Username: uname})
 
-	// Monta select menu com os jogos disponíveis
 	options := []discordgo.SelectMenuOption{}
 	for _, m := range matches {
 		t := m.StartsAt.In(time.FixedZone("BRT", -3*3600))
@@ -118,7 +143,6 @@ func (b *Bot) openPalpiteModal(s *discordgo.Session, i *discordgo.InteractionCre
 		return
 	}
 
-	// Pega palpite existente se tiver
 	uid := userID(i)
 	existing, _ := b.db.GetUserGuessesWithMatches(uid)
 	homeVal, awayVal := "0", "0"
@@ -213,26 +237,30 @@ func (b *Bot) submitPalpite(s *discordgo.Session, i *discordgo.InteractionCreate
 // ── /meus-palpites ─────────────────────────────────────────────────────────
 
 func (b *Bot) cmdMeusPalpites(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	deferReply(s, i, true)
+
 	uid := userID(i)
 	guesses, err := b.db.GetUserGuessesWithMatches(uid)
 	if err != nil || len(guesses) == 0 {
-		respond(s, i, "Você ainda não fez nenhum palpite. Use **/palpite** para começar!", true)
+		editReply(s, i, "Você ainda não fez nenhum palpite. Use **/palpite** para começar!")
 		return
 	}
 
-	respondEmbed(s, i, embedMeusPalpites(guesses), true)
+	editReplyEmbed(s, i, embedMeusPalpites(guesses))
 }
 
 // ── /ranking ───────────────────────────────────────────────────────────────
 
 func (b *Bot) cmdRanking(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	deferReply(s, i, false)
+
 	ranking, err := b.db.GetRanking()
 	if err != nil || len(ranking) == 0 {
-		respond(s, i, "Nenhum palpite registrado ainda.", false)
+		editReply(s, i, "Nenhum palpite registrado ainda.")
 		return
 	}
 
-	respondEmbed(s, i, embedRanking(ranking), false)
+	editReplyEmbed(s, i, embedRanking(ranking))
 }
 
 // ── /sync ──────────────────────────────────────────────────────────────────

@@ -26,52 +26,78 @@ func embedJogos(matches []*models.Match) *discordgo.MessageEmbed {
 
 func embedMeusPalpites(guesses []db.GuessWithMatch) *discordgo.MessageEmbed {
 	var pending, done []string
-	totalPts := 0
+	totalPts, totalExatos, totalVenc, total := 0, 0, 0, len(guesses)
+
 	for _, gm := range guesses {
 		g := gm.Guess
-		label := fmt.Sprintf("**%s** — seu palpite: %d×%d", gm.HomeTeam+" × "+gm.AwayTeam, g.HomeScore, g.AwayScore)
+		total = len(guesses)
+
 		if g.Calculated {
 			totalPts += g.Points
-			var status string
+			if g.Points == 3 {
+				totalExatos++
+			} else if g.Points == 1 {
+				totalVenc++
+			}
+
+			var pts string
 			switch g.Points {
 			case 3:
-				status = "🎯 Placar exato! +3pts"
+				pts = "🎯 +3pts"
 			case 1:
-				status = "✅ Vencedor certo! +1pt"
+				pts = "✅ +1pt"
 			default:
-				status = "❌ Sem pontos"
+				pts = "❌ 0pts"
 			}
-			result := ""
-			if gm.MatchHomeScore != nil && gm.MatchAwayScore != nil {
-				result = fmt.Sprintf(" _(resultado: %d×%d)_", *gm.MatchHomeScore, *gm.MatchAwayScore)
-			}
-			done = append(done, label+result+"\n└ "+status)
+			line := fmt.Sprintf("**%s × %s** — palpite: %d×%d %s",
+				gm.HomeTeam, gm.AwayTeam, g.HomeScore, g.AwayScore, pts)
+			done = append(done, line)
 		} else {
 			extra := ""
 			if gm.Status == "live" {
-				extra = " 🔴 AO VIVO"
+				extra = " 🔴"
 			}
-			pending = append(pending, label+extra)
+			line := fmt.Sprintf("**%s × %s** — palpite: %d×%d%s",
+				gm.HomeTeam, gm.AwayTeam, g.HomeScore, g.AwayScore, extra)
+			pending = append(pending, line)
 		}
 	}
+
+	resumo := fmt.Sprintf("📊 %d apostas · %dpts · ✅ %d · 🎯 %d",
+		total, totalPts, totalVenc, totalExatos)
+
 	var fields []*discordgo.MessageEmbedField
+
+	// Pendentes primeiro (todos)
 	if len(pending) > 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:  "⏳ Aguardando resultado",
+			Name:  "⏳ Pendente:",
 			Value: strings.Join(pending, "\n"),
 		})
 	}
+
+	// Últimos resultados — prioriza os mais recentes, máx 15 - len(pending)
+	maxDone := 15 - len(pending)
+	if maxDone < 5 {
+		maxDone = 5
+	}
+	if len(done) > maxDone {
+		done = done[len(done)-maxDone:]
+	}
+
 	if len(done) > 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:  "📊 Finalizados",
+			Name:  "📊 Últimos resultados:",
 			Value: strings.Join(done, "\n"),
 		})
 	}
+
 	return &discordgo.MessageEmbed{
-		Title:  "🎯 Seus palpites",
-		Color:  0x5865F2,
-		Fields: fields,
-		Footer: &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Total: %d pontos", totalPts)},
+		Title:       "🎯 Seus palpites",
+		Description: resumo,
+		Color:       0x5865F2,
+		Fields:      fields,
+		Footer:      &discordgo.MessageEmbedFooter{Text: "Placar exato = 3pts · Vencedor certo = 1pt"},
 	}
 }
 
@@ -86,7 +112,7 @@ func embedRanking(ranking []*models.RankingEntry) *discordgo.MessageEmbed {
 			medal = fmt.Sprintf("%d.", e.Position)
 		}
 		lines = append(lines, fmt.Sprintf(
-			"%s **%s** — %d pts _(🎯 %d exatos · ✅ %d venc.)_",
+			"%s **%s** — %d pts (🎯 %d · ✅ %d)",
 			medal, e.Username, e.Total, e.Exact, e.Winner,
 		))
 	}
